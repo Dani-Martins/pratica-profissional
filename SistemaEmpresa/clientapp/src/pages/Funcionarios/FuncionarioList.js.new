@@ -1,0 +1,285 @@
+import React, { useState, useEffect } from 'react';
+import { Container, Card, Button, Table, Spinner, Alert, Modal, ModalHeader, ModalBody, ModalFooter, Badge } from 'reactstrap';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+
+const FuncionarioList = () => {
+  const [funcionarios, setFuncionarios] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [modalExclusao, setModalExclusao] = useState(false);
+  const [funcionarioParaExcluir, setFuncionarioParaExcluir] = useState(null);
+  
+  const navigate = useNavigate();
+  
+  // Função robusta para detectar o tipo de pessoa
+  const determinarTipoPessoa = (funcionario) => {
+    // Log para diagnóstico
+    console.log(`Analisando tipo de pessoa para funcionário ${funcionario.id}:`, {
+      tipoPessoaOriginal: funcionario.tipoPessoa,
+      temCNPJ: !!funcionario.cnpj,
+      temCPF: !!funcionario.cpf,
+      temRazaoSocial: !!funcionario.razaoSocial
+    });
+    
+    // Lógica de determinação
+    if (funcionario.tipoPessoa === 'J') {
+      console.log(`Funcionário ${funcionario.id} é Jurídico por tipoPessoa='J'`);
+      return 'J';
+    } 
+    
+    if (funcionario.cnpj && (funcionario.razaoSocial || funcionario.nomeFantasia)) {
+      console.log(`Funcionário ${funcionario.id} é Jurídico por ter CNPJ e Razão Social/Nome Fantasia`);
+      return 'J';
+    }
+    
+    if (funcionario.cpf) {
+      console.log(`Funcionário ${funcionario.id} é Físico por ter CPF`);
+      return 'F';
+    }
+    
+    console.log(`Funcionário ${funcionario.id} foi classificado como Físico por padrão`);
+    return 'F';
+  };
+  
+  // Função para verificar se é pessoa física ou jurídica
+  const isPessoaFisica = (funcionario) => {
+    return determinarTipoPessoa(funcionario) === 'F';
+  };
+  
+  // Função auxiliar para exibir nome/razão social baseado no tipo
+  const getNomeDisplay = (funcionario) => {
+    if (isPessoaFisica(funcionario)) {
+      return funcionario.nome || '-';
+    }
+    return funcionario.razaoSocial || funcionario.nomeFantasia || funcionario.nome || '-'; // Para PJ mostra razão social com prioridade
+  };
+
+  // Função auxiliar para exibir CPF/CNPJ baseado no tipo
+  const getDocumentoDisplay = (funcionario) => {
+    if (isPessoaFisica(funcionario)) {
+      return funcionario.cpf ? `CPF: ${formatarCPF(funcionario.cpf)}` : '-';
+    }
+    return funcionario.cnpj ? `CNPJ: ${formatarCNPJ(funcionario.cnpj)}` : '-';
+  };
+  
+  // Função para formatar CPF
+  const formatarCPF = (cpf) => {
+    if (!cpf) return '-';
+    cpf = cpf.replace(/\D/g, '');
+    if (cpf.length !== 11) return cpf;
+    return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  };
+  
+  // Função para formatar CNPJ
+  const formatarCNPJ = (cnpj) => {
+    if (!cnpj) return '-';
+    cnpj = cnpj.replace(/\D/g, '');
+    if (cnpj.length !== 14) return cnpj;
+    return cnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+  };
+
+  useEffect(() => {
+    carregarFuncionarios();
+  }, []);
+  
+  const carregarFuncionarios = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get('/api/Funcionario', {
+        params: {
+          incluirInativos: true
+        }
+      });
+      
+      console.log("Dados originais dos funcionários:", response.data);
+      
+      // Garantir que os dados dos funcionários estão completos
+      const funcionariosComCidades = await Promise.all(
+        response.data.map(async (funcionario) => {
+          // Log para diagnóstico
+          console.log(`Funcionário ID ${funcionario.id}:`, {
+            tipoPessoa: funcionario.tipoPessoa,
+            nome: funcionario.nome,
+            razaoSocial: funcionario.razaoSocial,
+            cpf: funcionario.cpf,
+            cnpj: funcionario.cnpj
+          });
+          
+          // Verificar e ajustar os tipos de pessoa para exibição
+          const funcionarioProcessado = {
+            ...funcionario,
+            // Garantir que tipoPessoa tem um valor válido e consistente
+            tipoPessoa: funcionario.tipoPessoa || 
+                       (funcionario.cpf && !funcionario.cnpj ? 'F' : 
+                        funcionario.cnpj ? 'J' : 'F')
+          };
+          
+          // Buscar dados da cidade se existir
+          if (funcionario.cidadeId) {
+            try {
+              const cidadeResponse = await axios.get(`/api/Cidade/${funcionario.cidadeId}`);
+              funcionarioProcessado.cidade = cidadeResponse.data;
+            } catch (error) {
+              console.error(`Erro ao carregar cidade para funcionário ${funcionario.id}:`, error);
+            }
+          }
+          
+          return funcionarioProcessado;
+        })
+      );
+      
+      console.log("Dados processados dos funcionários:", funcionariosComCidades);
+      
+      setFuncionarios(funcionariosComCidades);
+      setError(null);
+    } catch (err) {
+      console.error('Erro ao carregar funcionários:', err);
+      setError('Não foi possível carregar a lista de funcionários. Tente novamente mais tarde.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatarData = (data) => {
+    if (!data) return '-';
+    return new Date(data).toLocaleDateString('pt-BR');
+  };
+  
+  const confirmarExclusao = (funcionario) => {
+    setFuncionarioParaExcluir(funcionario);
+    setModalExclusao(true);
+  };
+
+  const cancelarExclusao = () => {
+    setModalExclusao(false);
+    setFuncionarioParaExcluir(null);
+  };
+
+  const excluirFuncionario = async () => {
+    try {
+      await axios.delete(`/api/Funcionario/${funcionarioParaExcluir.id}`);
+      carregarFuncionarios();
+      setModalExclusao(false);
+      setFuncionarioParaExcluir(null);
+    } catch (err) {
+      console.error('Erro ao excluir funcionário:', err);
+      alert(`Erro ao excluir funcionário: ${err.response?.data?.mensagem || 'Verifique se não há registros dependentes.'}`);
+    }
+  };
+
+  if (loading && funcionarios.length === 0) {
+    return (
+      <Container className="d-flex justify-content-center p-5">
+        <Spinner color="primary" />
+      </Container>
+    );
+  }
+
+  return (
+    <Container fluid className="p-0">
+      <Card className="border-0">
+        <div className="d-flex justify-content-between align-items-center mb-4">
+          <h2>Funcionários</h2>
+          <Button color="primary" onClick={() => {
+            console.log("Navegando para cadastro de novo funcionário");
+            navigate('/funcionarios/novo');
+          }}>
+            + Novo Funcionário
+          </Button>
+        </div>
+
+        {error && <Alert color="danger">{error}</Alert>}
+        
+        <div className="table-responsive">
+          <Table striped hover>
+            <thead>
+              <tr>
+                <th>Tipo</th>
+                <th>Nome/Razão Social</th>
+                <th>CPF/CNPJ</th>
+                <th>Cargo</th>
+                <th>Telefone</th>
+                <th>Email</th>
+                <th>Cidade</th>
+                <th>Data Admissão</th>
+                <th>Situação</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {funcionarios.length === 0 ? (
+                <tr>
+                  <td colSpan="10" className="text-center">Nenhum funcionário cadastrado.</td>
+                </tr>
+              ) : (
+                funcionarios.map(funcionario => (
+                  <tr key={funcionario.id}>
+                    <td>
+                      <Badge color={isPessoaFisica(funcionario) ? 'info' : 'warning'}>
+                        {isPessoaFisica(funcionario) ? 'PF' : 'PJ'}
+                      </Badge>
+                    </td>
+                    <td>{getNomeDisplay(funcionario)}</td>
+                    <td>{getDocumentoDisplay(funcionario)}</td>
+                    <td>{funcionario.cargo || '-'}</td>
+                    <td>{funcionario.telefone || '-'}</td>
+                    <td>{funcionario.email || '-'}</td>
+                    <td>{funcionario.cidade?.nome || '-'}</td>
+                    <td>{formatarData(funcionario.dataAdmissao)}</td>
+                    <td>
+                      {funcionario.ativo ? (
+                        <Badge color="success">Ativo</Badge>
+                      ) : (
+                        <Badge color="danger">Inativo</Badge>
+                      )}
+                    </td>
+                    <td>
+                      <Button 
+                        color="info" 
+                        size="sm" 
+                        className="me-2"
+                        onClick={() => navigate(`/funcionarios/editar/${funcionario.id}`)}
+                      >
+                        Editar
+                      </Button>
+                      <Button 
+                        color="danger" 
+                        size="sm"
+                        onClick={() => confirmarExclusao(funcionario)}
+                      >
+                        Excluir
+                      </Button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </Table>
+        </div>
+      </Card>
+      
+      <Modal isOpen={modalExclusao} toggle={cancelarExclusao}>
+        <ModalHeader toggle={cancelarExclusao}>
+          Excluir Funcionário
+        </ModalHeader>
+        <ModalBody>
+          Tem certeza que deseja excluir o funcionário "{funcionarioParaExcluir ? 
+            (isPessoaFisica(funcionarioParaExcluir) ? 
+              funcionarioParaExcluir.nome : 
+              funcionarioParaExcluir.razaoSocial || funcionarioParaExcluir.nome) : ''}"?
+        </ModalBody>
+        <ModalFooter>
+          <Button color="danger" onClick={excluirFuncionario} className="me-2">
+            Excluir
+          </Button>
+          <Button color="secondary" onClick={cancelarExclusao}>
+            Cancelar
+          </Button>
+        </ModalFooter>
+      </Modal>
+    </Container>
+  );
+};
+
+export default FuncionarioList;

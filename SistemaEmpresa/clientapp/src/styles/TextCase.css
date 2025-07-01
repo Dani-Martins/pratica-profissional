@@ -1,0 +1,14 @@
+/* 
+ * Arquivo com estilos para ajudar a manter a consistência do sistema
+ * com relação a maiúsculas e minúsculas nos campos de formulário
+ */
+
+/* Classe para desativar a transformação em maiúsculas em um campo específico */
+.preserve-case {
+  text-transform: none !important;
+}
+
+/* Classe para forçar maiúsculas em um elemento específico */
+.uppercase {
+  text-transform: uppercase !important;
+}

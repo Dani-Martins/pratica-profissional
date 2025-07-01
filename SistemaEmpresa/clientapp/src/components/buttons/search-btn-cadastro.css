@@ -1,0 +1,43 @@
+/* Estilos para o botão de pesquisa baseado na imagem de referência (quadrado azul com lupa) */
+.search-btn-cadastro {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 32px !important;
+  height: 32px !important;
+  padding: 0 !important;
+  border-radius: 4px !important;
+  border: 1px solid #0d6efd !important;
+  background-color: transparent !important;
+  color: #0d6efd !important;
+  margin-left: 8px !important;
+  box-shadow: none !important;
+  transition: background-color 0.2s ease;
+}
+
+.search-btn-cadastro:hover {
+  background-color: rgba(13, 110, 253, 0.1) !important;
+}
+
+.search-btn-cadastro:focus,
+.search-btn-cadastro:active {
+  box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.25) !important;
+  background-color: transparent !important;
+  outline: none !important;
+}
+
+/* Garantir que o ícone tenha o tamanho e aparência corretos */
+.search-btn-cadastro svg,
+.search-btn-cadastro .svg-inline--fa {
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  font-size: 14px !important;
+  width: 14px !important;
+  height: 14px !important;
+}
+
+/* Estilos específicos para quando o botão estiver dentro de um modal */
+.modal .search-btn-cadastro {
+  margin-left: 8px !important;
+}

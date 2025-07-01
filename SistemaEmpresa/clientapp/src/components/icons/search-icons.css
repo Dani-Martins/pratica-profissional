@@ -1,0 +1,28 @@
+/* Estilos para garantir a visibilidade dos ícones de lupa em toda a aplicação */
+.search-icon-visible {
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Seletores específicos para os ícones de lupa em diferentes contextos */
+button svg,
+.btn svg,
+.btn-info svg,
+.ms-2 svg,
+.search-icon-button svg,
+.fa-search,
+svg.fa-search {
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Garantir que os ícones FontAwesome sejam visíveis */
+.svg-inline--fa.fa-search,
+button .svg-inline--fa.fa-search,
+.btn .svg-inline--fa.fa-search {
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}

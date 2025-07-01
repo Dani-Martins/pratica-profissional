@@ -1,0 +1,12 @@
+{
+  "name": "clientapp",
+  "version": "0.1.0",
+  "private": true,
+  "proxy": "http://localhost:7234",
+  "dependencies": {
+    "react-toastify": "^11.0.5"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3"
+  }
+}

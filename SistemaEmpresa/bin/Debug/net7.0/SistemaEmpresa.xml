@@ -1,0 +1,307 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>SistemaEmpresa</name>
+    </assembly>
+    <members>
+        <member name="M:SistemaEmpresa.Controllers.CidadeController.GetAll">
+            <summary>
+            Obtém todas as cidades cadastradas
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.CidadeController.GetById(System.Int64)">
+            <summary>
+            Obtém uma cidade pelo ID
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.CidadeController.GetByEstadoId(System.Int64)">
+            <summary>
+            Obtém cidades pelo ID do estado
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.CidadeController.Create(SistemaEmpresa.DTOs.CidadeCreateDTO)">
+            <summary>
+            Cadastra uma nova cidade
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.CidadeController.Update(System.Int64,SistemaEmpresa.DTOs.CidadeUpdateDTO)">
+            <summary>
+            Atualiza os dados de uma cidade
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.CidadeController.Delete(System.Int64)">
+            <summary>
+            Remove uma cidade
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.FaturaController.Get">
+            <summary>
+            Lista todas as faturas
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.FaturaController.GetById(System.Int64)">
+            <summary>
+            Obtém uma fatura pelo ID
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.FaturaController.GetByNFE(System.Int64)">
+            <summary>
+            Lista todas as faturas de uma NFE específica
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.FaturaController.Post(SistemaEmpresa.Models.Fatura)">
+            <summary>
+            Cadastra uma nova fatura
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.FaturaController.Put(System.Int64,SistemaEmpresa.Models.Fatura)">
+            <summary>
+            Atualiza uma fatura existente
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.FaturaController.Delete(System.Int64)">
+            <summary>
+            Remove uma fatura
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.ItemNFEController.Get">
+            <summary>
+            Lista todos os itens de NFE
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.ItemNFEController.GetById(System.Int64)">
+            <summary>
+            Obtém um item de NFE pelo ID
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.ItemNFEController.GetByNFE(System.Int64)">
+            <summary>
+            Lista todos os itens de uma NFE específica
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.ItemNFEController.Post(SistemaEmpresa.Models.ItemNFE)">
+            <summary>
+            Cadastra um novo item de NFE
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.ItemNFEController.Put(System.Int64,SistemaEmpresa.Models.ItemNFE)">
+            <summary>
+            Atualiza um item de NFE existente
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.ItemNFEController.Delete(System.Int64)">
+            <summary>
+            Remove um item de NFE
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.MovimentacaoNFEController.Get">
+            <summary>
+            Lista todas as movimentações
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.MovimentacaoNFEController.GetById(System.Int64)">
+            <summary>
+            Obtém uma movimentação pelo ID
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.MovimentacaoNFEController.GetByNFE(System.Int64)">
+            <summary>
+            Lista movimentações de uma NFE
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.MovimentacaoNFEController.Post(SistemaEmpresa.DTOs.CreateMovimentacaoNFEDTO)">
+            <summary>
+            Cria uma nova movimentação
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.MovimentacaoNFEController.Put(System.Int64,SistemaEmpresa.DTOs.UpdateMovimentacaoNFEDTO)">
+            <summary>
+            Atualiza uma movimentação
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.MovimentacaoNFEController.Delete(System.Int64)">
+            <summary>
+            Remove uma movimentação
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.NFEController.Get">
+            <summary>
+            Obtém todas as NFEs cadastradas
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.NFEController.GetById(System.Int64)">
+            <summary>
+            Obtém uma NFE pelo ID
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.NFEController.Post(SistemaEmpresa.Models.NFE)">
+            <summary>
+            Cadastra uma nova NFE
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.NFEController.Put(System.Int64,SistemaEmpresa.Models.NFE)">
+            <summary>
+            Atualiza uma NFE existente
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.NFEController.Delete(System.Int64)">
+            <summary>
+            Remove uma NFE
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.PaisController.GetAll">
+            <summary>
+            Obtém todos os países cadastrados
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.PaisController.Get(System.Int32)">
+            <summary>
+            Obtém um país pelo ID
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.PaisController.Create(SistemaEmpresa.DTOs.PaisCreateDTO)">
+            <summary>
+            Cadastra um novo país
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.PaisController.Put(System.Int32,SistemaEmpresa.DTOs.PaisUpdateDTO)">
+            <summary>
+            Atualiza um país existente
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.PaisController.Delete(System.Int32)">
+            <summary>
+            Remove um país
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.ProdutoFornecedorController.Get">
+            <summary>
+            Lista todos os produtos por fornecedor ativos
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.ProdutoFornecedorController.GetById(System.Int64)">
+            <summary>
+            Obtém um produto por fornecedor pelo ID
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.ProdutoFornecedorController.Post(SistemaEmpresa.Models.ProdutoFornecedor)">
+            <summary>
+            Cadastra um novo produto por fornecedor
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.ProdutoFornecedorController.Put(System.Int64,SistemaEmpresa.Models.ProdutoFornecedor)">
+            <summary>
+            Atualiza um produto por fornecedor existente
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.ProdutoFornecedorController.Delete(System.Int64)">
+            <summary>
+            Remove um produto por fornecedor
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.TranspItemController.Get">
+            <summary>
+            Lista todos os itens de transporte ativos
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.TranspItemController.GetById(System.Int64)">
+            <summary>
+            Obtém um item de transporte pelo ID
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.TranspItemController.Post(SistemaEmpresa.Models.TranspItem)">
+            <summary>
+            Cadastra um novo item de transporte
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.TranspItemController.Put(System.Int64,SistemaEmpresa.Models.TranspItem)">
+            <summary>
+            Atualiza um item de transporte existente
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.TranspItemController.Delete(System.Int64)">
+            <summary>
+            Remove um item de transporte
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.TransportadoraController.Get">
+            <summary>
+            Lista todas as transportadoras ativas
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.TransportadoraController.GetById(System.Int64)">
+            <summary>
+            Obtém uma transportadora pelo ID
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.TransportadoraController.Post(SistemaEmpresa.DTOs.TransportadoraCreateDTO)">
+            <summary>
+            Cadastra uma nova transportadora
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.TransportadoraController.Put(System.Int64,SistemaEmpresa.Models.Transportadora)">
+            <summary>
+            Atualiza uma transportadora existente
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.TransportadoraController.Delete(System.Int64)">
+            <summary>
+            Remove uma transportadora
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.VeiculoController.Get">
+            <summary>
+            Lista todos os veículos ativos
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.VeiculoController.GetById(System.Int64)">
+            <summary>
+            Obtém um veículo pelo ID
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.VeiculoController.Post(SistemaEmpresa.Models.DTOs.VeiculoCreateDTO)">
+            <summary>
+            Cadastra um novo veículo
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.VeiculoController.Put(System.Int64,SistemaEmpresa.Models.Veiculo)">
+            <summary>
+            Atualiza um veículo existente
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Controllers.VeiculoController.Delete(System.Int64)">
+            <summary>
+            Remove um veículo
+            </summary>
+        </member>
+        <member name="T:SistemaEmpresa.DTOs.EstadoDTO">
+            <summary>
+            DTO para exibição completa de um Estado
+            </summary>
+        </member>
+        <member name="T:SistemaEmpresa.DTOs.EstadoCreateDTO">
+            <summary>
+            DTO específico para criação de um Estado (POST)
+            </summary>
+        </member>
+        <member name="T:SistemaEmpresa.DTOs.EstadoUpdateDTO">
+            <summary>
+            DTO para atualização de um Estado (PUT)
+            </summary>
+        </member>
+        <member name="M:SistemaEmpresa.Repositories.EstadoRepository.PaisExists(System.Int64)">
+            <summary>
+            Verifica se um país com o ID informado existe
+            </summary>
+            <param name="paisId">ID do país</param>
+            <returns>True se o país existir, False caso contrário</returns>
+        </member>
+        <member name="M:SistemaEmpresa.Services.CidadeService.GetEstadoByIdAsync(System.Int64)">
+            <summary>
+            Obtém um estado pelo ID
+            </summary>
+            <param name="estadoId">ID do estado a ser buscado</param>
+            <returns>O estado encontrado ou null se não existir</returns>
+        </member>
+    </members>
+</doc>

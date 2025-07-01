@@ -1,0 +1,22 @@
+/* Estilos globais para tabelas */
+.table-responsive {
+  width: 100% !important;
+  overflow-x: auto;
+}
+
+.table-responsive .table {
+  width: 100% !important;
+  margin-bottom: 0;
+}
+
+/* Garantir que a tabela preenche todo o espaço disponível */
+.table {
+  width: 100% !important;
+  table-layout: auto;
+}
+
+/* Estilos específicos para o modal de função de funcionário */
+.modal-funcao-funcionario .table-responsive {
+  max-height: 400px;
+  overflow-y: auto;
+}

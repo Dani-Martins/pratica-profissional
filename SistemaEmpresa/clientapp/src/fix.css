@@ -1,0 +1,72 @@
+/* Correção para esconder o botão de busca flutuante específico no canto inferior esquerdo */
+body > button.btn-primary,
+body > button.btn-info,
+body > .btn[style*="position: fixed"],
+body > .btn[style*="position: absolute"],
+body > button[style*="bottom: 0"],
+body > button[style*="bottom: 10"],
+body > button[style*="bottom: 20"],
+div#root ~ button,
+div#root ~ a.btn,
+div#root ~ div > button,
+body > div:not(#root) > button.btn {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+/* Campos de entrada em maiúsculas */
+.form-control, 
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="color"]), 
+textarea, 
+select {
+  text-transform: uppercase !important;
+}
+
+/* Seletor mais específico para o botão azul com ícone de lupa no canto inferior esquerdo */
+body > button.btn-primary svg:not(.search-icon-visible),
+body > button.btn-info svg:not(.search-icon-visible),
+body > .btn svg[data-icon="search"]:not(.search-icon-visible),
+body > .btn svg.bi-search:not(.search-icon-visible),
+body > button.btn-primary i.fa-search:not(.search-icon-visible),
+body > button.btn-info i.fa-search:not(.search-icon-visible),
+div#root ~ button svg:not(.search-icon-visible),
+div#root ~ .btn svg:not(.search-icon-visible),
+div:not(#root) > button:not(.ms-2):not(.search-icon-button) svg:not(.search-icon-visible) {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+/* Excluir componentes de pesquisa da regra de ocultação */
+.search-icon-button svg,
+.search-icon-button .fa-search,
+.search-icon-button .svg-inline--fa,
+.search-btn-cadastro svg,
+.search-btn-cadastro .fa-search,
+.search-btn-cadastro .svg-inline--fa,
+.search-icon-visible {
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Exibição específica para ícones em botões dentro de modais */
+.modal-body .btn svg,
+.d-flex .ms-2 svg,
+.d-flex .btn.ms-2 svg,
+button svg.bi-search,
+button .bi-search,
+.btn .fa-search,
+.ms-2 svg,
+.btn-info svg {
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Garantir que qualquer botão em posição absoluta ou fixa sem relação com formulários seja ocultado */
+button[style*="position: fixed"]:not([form]),
+button[style*="position: absolute"]:not([form]) {
+  display: none !important;
+  visibility: hidden !important;
+}

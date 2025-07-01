@@ -1,0 +1,22 @@
+/* Estilos para transformar campos de entrada em maiúsculas */
+
+/* Garante que os inputs mostrem o texto em maiúsculas ao digitar */
+input, 
+textarea, 
+.form-control:not(select), 
+.input-group-text {
+  text-transform: uppercase !important;
+}
+
+/* Removemos 'select' da lista acima para manter as opções no formato original */
+
+/* Para os valores dos inputs serem exibidos em maiúsculas mesmo durante a edição */
+input::placeholder, 
+textarea::placeholder {
+  text-transform: uppercase !important;
+}
+
+/* Classe específica para campos que devem continuar em maiúsculas */
+.uppercase-input {
+  text-transform: uppercase !important;
+}

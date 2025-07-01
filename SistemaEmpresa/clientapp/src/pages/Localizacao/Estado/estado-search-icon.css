@@ -1,0 +1,27 @@
+.search-icon-visible {
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Garantir que o ícone seja visível nos botões de busca */
+.btn-info svg, 
+button.btn svg, 
+.modal button svg,
+.ms-2 svg {
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Seletores mais específicos para garantir que os estilos não sejam sobrescritos */
+.d-flex .btn svg, 
+.modal .btn svg, 
+.d-flex .btn.ms-2 svg, 
+.modal-body .btn svg,
+.modal-content button svg,
+.d-flex button svg {
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}

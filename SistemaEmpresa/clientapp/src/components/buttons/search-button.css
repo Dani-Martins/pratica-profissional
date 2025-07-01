@@ -1,0 +1,51 @@
+/* Estilos específicos para o componente de botão de pesquisa padronizado */
+.search-btn-cadastro,
+.search-icon-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 32px;
+  height: 32px;
+  padding: 0 !important;
+  border-radius: 4px;
+  background-color: transparent !important;
+  border: 1px solid #0d6efd !important; /* Borda azul como na imagem de referência */
+  color: #0d6efd !important; /* Cor do ícone em azul */
+}
+
+/* Garantir que o ícone dentro do botão seja visível */
+.search-btn-cadastro .search-icon-visible,
+.search-btn-cadastro svg,
+.search-btn-cadastro .svg-inline--fa,
+.search-icon-button .search-icon-visible,
+.search-icon-button svg,
+.search-icon-button .svg-inline--fa {
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  font-size: 14px;
+}
+
+/* Ajuste para botão menor */
+.search-icon-button.btn-sm {
+  width: 28px;
+  height: 28px;
+}
+
+/* Ajuste para botão maior */
+.search-icon-button.btn-lg {
+  width: 36px;
+  height: 36px;
+}
+
+/* Efeito de hover */
+.search-icon-button:hover {
+  background-color: rgba(13, 110, 253, 0.1) !important; /* Azul muito claro no hover */
+  box-shadow: none !important;
+}
+
+/* Efeito de foco */
+.search-icon-button:focus,
+.search-icon-button:active {
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important; /* Sombra azul quando em foco */
+}

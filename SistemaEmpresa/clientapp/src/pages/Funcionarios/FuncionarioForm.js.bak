@@ -1,0 +1,929 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { 
+  Card, CardBody, Form, FormGroup, Label, Input, 
+  Button, Alert, Spinner, Row, Col, Container, FormFeedback,
+  InputGroup, InputGroupText
+} from 'reactstrap';
+import { Formik } from 'formik';
+import * as Yup from 'yup';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { 
+  faSave, faArrowLeft, faSearch,
+  faCalendarAlt, faMapMarkerAlt
+} from '@fortawesome/free-solid-svg-icons';
+import axios from 'axios';
+import { 
+  formatarCPF, 
+  formatarCEP, 
+  formatarTelefone, 
+  formatarMoeda,
+  converterMoedaParaNumero,
+  formatarCNPJ
+} from '../../utils/formatadores';
+import EstadoSearchModal from '../Localizacao/Estado/EstadoSearchModal';
+import PaisSearchModal from '../Localizacao/Pais/PaisSearchModal';
+import CidadeSearchModal from '../Localizacao/Cidade/CidadeSearchModal';
+import FuncaoFuncionarioSearchModal from './Funcao/FuncaoFuncionarioSearchModal';
+import './FuncionarioForm.css';
+
+// Funções de validação
+const validarCPF = (cpf) => {
+  cpf = cpf.replace(/[^\d]/g, '');
+  
+  if (cpf.length !== 11) return false;
+  if (/^(.)\1+$/.test(cpf)) return false;
+  
+  let soma = 0;
+  for (let i = 0; i < 9; i++) {
+    soma += parseInt(cpf.charAt(i)) * (10 - i);
+  }
+  
+  let digitoVerificador = 11 - (soma % 11);
+  if (digitoVerificador > 9) digitoVerificador = 0;
+  if (parseInt(cpf.charAt(9)) !== digitoVerificador) return false;
+  
+  soma = 0;
+  for (let i = 0; i < 10; i++) {
+    soma += parseInt(cpf.charAt(i)) * (11 - i);
+  }
+  
+  digitoVerificador = 11 - (soma % 11);
+  if (digitoVerificador > 9) digitoVerificador = 0;
+  
+  return parseInt(cpf.charAt(10)) === digitoVerificador;
+};
+
+const validarCNPJ = (cnpj) => {
+  cnpj = cnpj.replace(/[^\d]/g, '');
+  
+  if (cnpj.length !== 14) return false;
+  if (/^(.)\1+$/.test(cnpj)) return false;
+  
+  let soma = 0;
+  let peso = 5;
+  
+  for (let i = 0; i < 12; i++) {
+    soma += parseInt(cnpj.charAt(i)) * peso;
+    peso = peso === 2 ? 9 : peso - 1;
+  }
+  
+  let digitoVerificador = 11 - (soma % 11);
+  if (digitoVerificador < 2) digitoVerificador = 0;
+  if (parseInt(cnpj.charAt(12)) !== digitoVerificador) return false;
+  
+  soma = 0;
+  peso = 6;
+  
+  for (let i = 0; i < 13; i++) {
+    soma += parseInt(cnpj.charAt(i)) * peso;
+    peso = peso === 2 ? 9 : peso - 1;
+  }
+  
+  digitoVerificador = 11 - (soma % 11);
+  if (digitoVerificador < 2) digitoVerificador = 0;
+  
+  return parseInt(cnpj.charAt(13)) === digitoVerificador;
+};
+
+// Schema de validação para funcionário
+const createValidationSchema = () => {
+  // Schema base para funcionário (agora apenas pessoa física)
+  return Yup.object().shape({
+    funcaoFuncionarioId: Yup.number().required('Função de Funcionário é obrigatória'),
+    email: Yup.string().email('Email inválido').required('Email é obrigatório'),
+    endereco: Yup.string().required('Endereço é obrigatório'),
+    numero: Yup.string().required('Número é obrigatório'),
+    bairro: Yup.string().required('Bairro é obrigatório'),
+    cidadeId: Yup.mixed().required('Cidade é obrigatória'),
+    // Validações para campos de pessoa física
+    nome: Yup.string()
+      .required('Nome é obrigatório')
+      .min(3, 'Nome deve ter pelo menos 3 caracteres')
+      .max(100, 'Nome deve ter no máximo 100 caracteres'),
+    cpf: Yup.string()
+      .required('CPF é obrigatório')
+      .test('cpf-valido', 'CPF inválido', validarCPF),
+    // Validações para novos campos
+    apelido: Yup.string().max(60, 'Apelido deve ter no máximo 60 caracteres'),
+    cnh: Yup.string().max(25, 'CNH deve ter no máximo 25 caracteres'),
+    observacoes: Yup.string().max(255, 'Observações deve ter no máximo 255 caracteres')
+  });
+};
+
+const FuncionarioForm = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const formikRef = React.useRef(null);
+  const [initialValues, setInitialValues] = useState({
+    nome: '',
+    cpf: '',
+    rg: '',
+    dataNascimento: '',
+    funcaoFuncionarioId: '',
+    funcaoFuncionarioNome: '',
+    dataAdmissao: '',
+    dataDemissao: '',
+    salario: 'R$ 0,00',
+    email: '',
+    telefone: '',
+    endereco: '',
+    numero: '',
+    complemento: '',
+    bairro: '',
+    cep: '',
+    cidadeId: '',
+    observacoes: '',
+    ativo: true,
+    // Novos campos
+    apelido: '',
+    cnh: '',
+    dataValidadeCNH: '',
+    sexo: '',
+    estadoCivil: '',
+    isBrasileiro: 1,
+    nacionalidade: ''
+  });
+  
+  // Estado para controle de modais de localização
+  const [cidadeSelecionada, setCidadeSelecionada] = useState(null);
+  const [estadoSelecionado, setEstadoSelecionado] = useState(null);
+  const [paisSelecionado, setPaisSelecionado] = useState(null);
+  const [cidadeModalOpen, setCidadeModalOpen] = useState(false);
+  const [estadoModalOpen, setEstadoModalOpen] = useState(false);
+  const [paisModalOpen, setPaisModalOpen] = useState(false);
+  const [funcaoModalOpen, setFuncaoModalOpen] = useState(false);
+  
+  // Efeito para atualizar o cidadeId quando cidadeSelecionada mudar
+  useEffect(() => {
+    if (cidadeSelecionada && formikRef.current) {
+      formikRef.current.setFieldValue('cidadeId', cidadeSelecionada.id);
+    }
+  }, [cidadeSelecionada]);
+
+  useEffect(() => {
+    // Carregar dados do funcionário para edição
+    const fetchFuncionario = async () => {
+      if (id) {
+        try {
+          setLoading(true);
+          
+          const response = await axios.get(`/api/Funcionario/${id}`);
+          const funcionarioData = response.data;
+          
+          setInitialValues({
+            nome: funcionarioData.nome || '',
+            cpf: funcionarioData.cpf || '',
+            rg: funcionarioData.rg || '',
+            dataNascimento: funcionarioData.dataNascimento ? funcionarioData.dataNascimento.substring(0, 10) : '',
+            email: funcionarioData.email || '',
+            telefone: funcionarioData.telefone || '',
+            funcaoFuncionarioId: funcionarioData.funcaoFuncionarioId || '',
+            funcaoFuncionarioNome: funcionarioData.funcaoFuncionario?.funcaoFuncionarioNome || '',
+            dataAdmissao: funcionarioData.dataAdmissao ? funcionarioData.dataAdmissao.substring(0, 10) : '',
+            dataDemissao: funcionarioData.dataDemissao ? funcionarioData.dataDemissao.substring(0, 10) : '',
+            salario: funcionarioData.salario ? formatarMoeda(funcionarioData.salario) : 'R$ 0,00',
+            endereco: funcionarioData.endereco || '',
+            numero: funcionarioData.numero || '',
+            complemento: funcionarioData.complemento || '',
+            bairro: funcionarioData.bairro || '',
+            cep: funcionarioData.cep || '',
+            cidadeId: funcionarioData.cidadeId || '',
+            observacoes: funcionarioData.observacoes || '',
+            ativo: funcionarioData.ativo !== false,
+            // Novos campos
+            apelido: funcionarioData.apelido || '',
+            cnh: funcionarioData.cnh || '',
+            dataValidadeCNH: funcionarioData.dataValidadeCNH ? funcionarioData.dataValidadeCNH.substring(0, 10) : '',
+            sexo: funcionarioData.sexo?.toString() || '',
+            estadoCivil: funcionarioData.estadoCivil?.toString() || '',
+            isBrasileiro: funcionarioData.isBrasileiro || 1,
+            nacionalidade: funcionarioData.nacionalidade?.toString() || ''
+          });
+          
+          if (funcionarioData.cidadeId) {
+            try {
+              const cidadeResponse = await axios.get(`/api/Cidade/${funcionarioData.cidadeId}`);
+              const cidadeData = cidadeResponse.data;
+              console.log('Cidade carregada:', cidadeData);
+              setCidadeSelecionada(cidadeData);
+            } catch (cidadeErr) {
+              console.error('Erro ao carregar cidade do funcionário:', cidadeErr);
+            }
+          }
+          
+        } catch (err) {
+          console.error('Erro ao carregar funcionário:', err);
+          setError('Erro ao carregar dados do funcionário: ' + (err.response?.data?.message || err.message));
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+    
+    fetchFuncionario();
+  }, [id]);  const handleSubmit = async (values, { setSubmitting }) => {
+    try {
+      setError(null);
+      
+      console.log('Dados completos do formulário:', values);
+      
+      // Criar uma cópia dos dados para envio
+      const funcionarioData = {
+        ...values,
+        tipoPessoa: 'F', // Definido explicitamente como pessoa física
+        dataNascimento: values.dataNascimento ? new Date(values.dataNascimento).toISOString() : null,
+        dataAdmissao: values.dataAdmissao ? new Date(values.dataAdmissao).toISOString() : null,
+        dataDemissao: values.dataDemissao ? new Date(values.dataDemissao).toISOString() : null,
+        dataValidadeCNH: values.dataValidadeCNH ? new Date(values.dataValidadeCNH).toISOString() : null,
+        salario: values.salario ? converterMoedaParaNumero(values.salario) : 0
+      };
+      
+      // Validação básica
+      if (!funcionarioData.nome) {
+        setError('O nome é obrigatório');
+        setSubmitting(false);
+        return;
+      }
+      
+      // Log completo dos dados antes de enviar
+      console.log('Dados finais que serão enviados ao servidor:', JSON.stringify(funcionarioData, null, 2));
+      
+      try {
+        if (id) {
+          const response = await axios.put(`/api/Funcionario/${id}`, funcionarioData);
+          console.log('Resposta do servidor (PUT):', response.data);
+        } else {
+          const response = await axios.post('/api/Funcionario', funcionarioData);
+          console.log('Resposta do servidor (POST):', response.data);
+        }
+      } catch (apiError) {
+        console.error('Erro detalhado da API:', apiError);
+        if (apiError.response) {
+          console.error('Resposta de erro:', apiError.response.data);
+          console.error('Status:', apiError.response.status);
+          console.error('Headers:', apiError.response.headers);
+        }
+        throw apiError; // Re-lança para tratamento posterior
+      }
+      
+      setSubmitSuccess(true);
+      setTimeout(() => navigate('/funcionarios'), 2000);
+    } catch (err) {
+      console.error('Erro ao salvar funcionário:', err);
+      setError('Erro ao salvar dados: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Função para tratar a entrada de valores no campo de salário
+  const handleSalarioChange = (e, setFieldValue) => {
+    // Pega o valor atual do campo
+    let valor = e.target.value;
+    
+    // Se o usuário está tentando limpar o campo, definimos o valor mínimo
+    if (!valor || valor === 'R$ ' || valor === 'R$') {
+      setFieldValue('salario', 'R$ 0,00');
+      return;
+    }
+    
+    // Remove tudo que não é número
+    const apenasDigitos = valor.replace(/\D/g, '');
+    
+    // Converte para número (em centavos, depois divide por 100)
+    const valorNumerico = parseInt(apenasDigitos) / 100;
+    
+    // Formata como moeda
+    const valorFormatado = formatarMoeda(valorNumerico);
+    
+    setFieldValue('salario', valorFormatado);
+  };
+
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center p-5">
+        <Spinner color="primary" />
+      </div>
+    );
+  }
+
+  return (
+    <Container fluid className="p-0">
+      <Card className="border-0 shadow-sm">
+        <CardBody>
+          <div className="d-flex justify-content-between align-items-center mb-4">
+            <h2>{id ? 'Editar' : 'Novo'} Funcionário</h2>
+            <Button color="secondary" onClick={() => navigate('/funcionarios')}>
+              <FontAwesomeIcon icon={faArrowLeft} className="me-2" />
+              Voltar
+            </Button>
+          </div>
+          
+          <Formik
+            initialValues={initialValues}
+            validationSchema={createValidationSchema()}
+            onSubmit={handleSubmit}
+            enableReinitialize
+            innerRef={formikRef}
+          >
+            {({ values, errors, touched, handleChange, handleBlur, handleSubmit, isSubmitting, setFieldValue }) => (
+              <Form onSubmit={handleSubmit}>
+                {/* Alertas de erro/sucesso */}
+                {error && <Alert color="danger">{error}</Alert>}
+                {submitSuccess && <Alert color="success">Funcionário salvo com sucesso!</Alert>}
+                
+                {/* Dados básicos */}
+                <Row>
+                  <Col md={12}>
+                    <FormGroup>
+                      <Label for="nome">Nome*</Label>
+                      <Input
+                        type="text"
+                        name="nome"
+                        id="nome"
+                        value={values.nome}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        invalid={touched.nome && !!errors.nome}
+                      />
+                      {touched.nome && errors.nome && <FormFeedback>{errors.nome}</FormFeedback>}
+                    </FormGroup>
+                  </Col>
+                </Row>
+                
+                <Row>
+                  <Col md={6}>
+                    <FormGroup>
+                      <Label for="apelido">Apelido</Label>
+                      <Input
+                        type="text"
+                        name="apelido"
+                        id="apelido"
+                        value={values.apelido}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                      />
+                    </FormGroup>
+                  </Col>
+                </Row>
+                <Row>
+                  <Col md={3}>
+                    <FormGroup>
+                      <Label for="cpf">CPF*</Label>
+                      <Input
+                        type="text"
+                        name="cpf"
+                        id="cpf"
+                        value={values.cpf}
+                        onChange={(e) => {
+                          const formatted = formatarCPF(e.target.value);
+                          setFieldValue('cpf', formatted);
+                        }}
+                        onBlur={handleBlur}
+                        invalid={touched.cpf && !!errors.cpf}
+                      />
+                      {touched.cpf && errors.cpf && <FormFeedback>{errors.cpf}</FormFeedback>}
+                    </FormGroup>
+                  </Col>
+                  <Col md={3}>
+                    <FormGroup>
+                      <Label for="rg">RG</Label>
+                      <Input
+                        type="text"
+                        name="rg"
+                        id="rg"
+                        value={values.rg}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                      />
+                    </FormGroup>
+                  </Col>
+                  <Col md={3}>
+                    <FormGroup>
+                      <Label for="email">Email*</Label>
+                      <Input
+                        type="email"
+                        name="email"
+                        id="email"
+                        value={values.email}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        invalid={touched.email && !!errors.email}
+                      />
+                      {touched.email && errors.email && <FormFeedback>{errors.email}</FormFeedback>}
+                    </FormGroup>
+                  </Col>
+                  <Col md={3}>
+                    <FormGroup>
+                      <Label for="telefone">Telefone</Label>
+                      <Input
+                        type="text"
+                        name="telefone"
+                        id="telefone"
+                        value={values.telefone}
+                        onChange={(e) => {
+                          const formatted = formatarTelefone(e.target.value);
+                          setFieldValue('telefone', formatted);
+                        }}
+                        onBlur={handleBlur}
+                      />
+                    </FormGroup>
+                  </Col>
+                </Row>
+
+                    <Row>
+                      <Col md={3}>
+                        <FormGroup>
+                          <Label for="dataNascimento">Data de Nascimento</Label>
+                          <Input
+                            type="date"
+                            name="dataNascimento"
+                            id="dataNascimento"
+                            value={values.dataNascimento}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                          />
+                        </FormGroup>
+                      </Col>
+                      <Col md={3}>
+                        <FormGroup>
+                          <Label for="sexo">Sexo</Label>
+                          <Input
+                            type="select"
+                            name="sexo"
+                            id="sexo"
+                            value={values.sexo || ''}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                          >
+                            <option value="">Selecione...</option>
+                            <option value="1">Masculino</option>
+                            <option value="2">Feminino</option>
+                            <option value="3">Outro</option>
+                          </Input>
+                        </FormGroup>
+                      </Col>
+                      <Col md={3}>
+                        <FormGroup>
+                          <Label for="estadoCivil">Estado Civil</Label>
+                          <Input
+                            type="select"
+                            name="estadoCivil"
+                            id="estadoCivil"
+                            value={values.estadoCivil || ''}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                          >
+                            <option value="">Selecione...</option>
+                            <option value="1">Solteiro(a)</option>
+                            <option value="2">Casado(a)</option>
+                            <option value="3">Divorciado(a)</option>
+                            <option value="4">Viúvo(a)</option>
+                            <option value="5">União Estável</option>
+                          </Input>
+                        </FormGroup>
+                      </Col>
+                      <Col md={3}>
+                        <FormGroup>
+                          <Label for="email">Email*</Label>
+                          <Input
+                            type="email"
+                            name="email"
+                            id="email"
+                            value={values.email}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            invalid={touched.email && !!errors.email}
+                          />
+                          {touched.email && errors.email && <FormFeedback>{errors.email}</FormFeedback>}
+                        </FormGroup>
+                      </Col>
+                      <Col md={3}>
+                        <FormGroup>
+                          <Label for="telefone">Telefone</Label>
+                          <Input
+                            type="text"
+                            name="telefone"
+                            id="telefone"
+                            value={values.telefone}
+                            onChange={(e) => {
+                              const formatted = formatarTelefone(e.target.value);
+                              setFieldValue('telefone', formatted);
+                            }}
+                            onBlur={handleBlur}
+                          />
+                        </FormGroup>
+                      </Col>
+                    </Row>
+
+                    {/* Informações adicionais para pessoa física */}
+                    <Row>
+                      <Col md={12}>
+                        <h5 className="mt-3 mb-2">Informações Complementares</h5>
+                      </Col>
+                    </Row>
+
+                    <Row>
+                      <Col md={4}>
+                        <FormGroup>
+                          <Label for="cnh">CNH</Label>
+                          <Input
+                            type="text"
+                            name="cnh"
+                            id="cnh"
+                            value={values.cnh}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                          />
+                        </FormGroup>
+                      </Col>
+                      <Col md={4}>
+                        <FormGroup>
+                          <Label for="dataValidadeCNH">Validade da CNH</Label>
+                          <Input
+                            type="date"
+                            name="dataValidadeCNH"
+                            id="dataValidadeCNH"
+                            value={values.dataValidadeCNH}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                          />
+                        </FormGroup>
+                      </Col>
+                    </Row>
+
+                    <Row>
+                      <Col md={4}>
+                        <FormGroup check className="mb-3 mt-2">
+                          <div className="form-check form-switch">
+                            <Input
+                              type="checkbox"
+                              className="form-check-input"
+                              id="isBrasileiro"
+                              role="switch"
+                              name="isBrasileiro"
+                              checked={values.isBrasileiro === 1}
+                              onChange={(e) => setFieldValue('isBrasileiro', e.target.checked ? 1 : 0)}
+                            />
+                            <Label className="form-check-label" for="isBrasileiro">
+                              Brasileiro
+                            </Label>
+                          </div>
+                        </FormGroup>
+                      </Col>
+                      <Col md={4}>
+                        <FormGroup>
+                          <Label for="nacionalidade">Nacionalidade</Label>
+                          <Input
+                            type="text"
+                            name="nacionalidade"
+                            id="nacionalidade"
+                            value={values.nacionalidade}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            disabled={values.isBrasileiro === 1}
+                          />
+                        </FormGroup>
+                      </Col>
+                    </Row>
+                  </Col>
+                </Row>
+
+                {/* Dados profissionais */}
+                <Row className="mt-4">
+                  <Col md={12}>
+                    <h4 className="mb-3">Dados Profissionais</h4>
+                  </Col>
+                </Row>
+
+                <Row>
+                  <Col md={6}>
+                    <FormGroup>
+                      <Label for="funcaoFuncionarioId">Função de Funcionário*</Label>
+                      <InputGroup>
+                        <Input
+                          type="text"
+                          name="funcaoFuncionarioNome"
+                          id="funcaoFuncionarioNome"
+                          value={values.funcaoFuncionarioNome || ''}
+                          onChange={handleChange}
+                          readOnly
+                          invalid={touched.funcaoFuncionarioId && !!errors.funcaoFuncionarioId}
+                        />
+                        <Input
+                          type="hidden"
+                          name="funcaoFuncionarioId"
+                          id="funcaoFuncionarioId"
+                          value={values.funcaoFuncionarioId || ''}
+                        />
+                        <InputGroupText
+                          className="cursor-pointer"
+                          onClick={() => setFuncaoModalOpen(true)}
+                          title="Buscar Função de Funcionário"
+                        >
+                          <FontAwesomeIcon icon={faSearch} />
+                        </InputGroupText>
+                      </InputGroup>
+                      {touched.funcaoFuncionarioId && errors.funcaoFuncionarioId && (
+                        <FormFeedback style={{ display: 'block' }}>{errors.funcaoFuncionarioId}</FormFeedback>
+                      )}
+                    </FormGroup>
+                  </Col>
+                  <Col md={2}>
+                    <FormGroup>
+                      <Label for="dataAdmissao">Data de Admissão</Label>
+                      <Input
+                        type="date"
+                        name="dataAdmissao"
+                        id="dataAdmissao"
+                        value={values.dataAdmissao}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                      />
+                    </FormGroup>
+                  </Col>
+                  <Col md={2}>
+                    <FormGroup>
+                      <Label for="dataDemissao">Data de Demissão</Label>
+                      <Input
+                        type="date"
+                        name="dataDemissao"
+                        id="dataDemissao"
+                        value={values.dataDemissao}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                      />
+                    </FormGroup>
+                  </Col>
+                  <Col md={2}>
+                    <FormGroup>
+                      <Label for="salario">Salário</Label>
+                      <Input
+                        type="text"
+                        name="salario"
+                        id="salario"
+                        value={values.salario}
+                        onChange={(e) => handleSalarioChange(e, setFieldValue)}
+                        onBlur={(e) => {
+                          // Ao perder o foco, garantimos que o valor esteja formatado corretamente
+                          handleBlur(e);
+                          const valorNumerico = converterMoedaParaNumero(values.salario);
+                          const valorFormatado = formatarMoeda(valorNumerico);
+                          setFieldValue('salario', valorFormatado);
+                        }}
+                      />
+                    </FormGroup>
+                  </Col>
+                </Row>
+
+                <Row className="mt-4">
+                  <Col md={12}>
+                    <h4 className="mb-3">Endereço</h4>
+                  </Col>
+                </Row>
+
+                <Row>
+                  <Col md={6}>
+                    <FormGroup>
+                      <Label for="endereco">Endereço*</Label>
+                      <Input
+                        type="text"
+                        name="endereco"
+                        id="endereco"
+                        value={values.endereco}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        invalid={touched.endereco && !!errors.endereco}
+                      />
+                      {touched.endereco && errors.endereco && <FormFeedback>{errors.endereco}</FormFeedback>}
+                    </FormGroup>
+                  </Col>
+                  <Col md={2}>
+                    <FormGroup>
+                      <Label for="numero">Número*</Label>
+                      <Input
+                        type="text"
+                        name="numero"
+                        id="numero"
+                        value={values.numero}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        invalid={touched.numero && !!errors.numero}
+                      />
+                      {touched.numero && errors.numero && <FormFeedback>{errors.numero}</FormFeedback>}
+                    </FormGroup>
+                  </Col>
+                  <Col md={4}>
+                    <FormGroup>
+                      <Label for="complemento">Complemento</Label>
+                      <Input
+                        type="text"
+                        name="complemento"
+                        id="complemento"
+                        value={values.complemento}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                      />
+                    </FormGroup>
+                  </Col>
+                </Row>
+
+                <Row>
+                  <Col md={4}>
+                    <FormGroup>
+                      <Label for="bairro">Bairro*</Label>
+                      <Input
+                        type="text"
+                        name="bairro"
+                        id="bairro"
+                        value={values.bairro}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        invalid={touched.bairro && !!errors.bairro}
+                      />
+                      {touched.bairro && errors.bairro && <FormFeedback>{errors.bairro}</FormFeedback>}
+                    </FormGroup>
+                  </Col>
+                  <Col md={3}>
+                    <FormGroup>
+                      <Label for="cep">CEP</Label>
+                      <Input
+                        type="text"
+                        name="cep"
+                        id="cep"
+                        value={values.cep}
+                        onChange={(e) => {
+                          const formatted = formatarCEP(e.target.value);
+                          setFieldValue('cep', formatted);
+                        }}
+                        onBlur={handleBlur}
+                        invalid={touched.cep && !!errors.cep}
+                      />
+                      {touched.cep && errors.cep && <FormFeedback>{errors.cep}</FormFeedback>}
+                    </FormGroup>
+                  </Col>
+                  <Col md={5}>
+                    <FormGroup>
+                      <Label for="cidadeId">Cidade*</Label>
+                      <div className="d-flex">
+                        <Input
+                          type="text"
+                          name="cidadeNome"
+                          id="cidadeNome"
+                          value={cidadeSelecionada ? `${cidadeSelecionada.nome} - ${cidadeSelecionada.estado?.uf || ''}` : ''}
+                          onChange={() => {/* Campo é somente leitura */}}
+                          placeholder="Selecione uma cidade..."
+                          invalid={touched.cidadeId && !!errors.cidadeId}
+                          className="flex-grow-1"
+                          readOnly
+                        />
+                        <Button
+                          outline
+                          color="primary" 
+                          type="button"
+                          className="ms-2"
+                          onClick={() => setCidadeModalOpen(true)}
+                        >
+                          <FontAwesomeIcon icon={faSearch} />
+                        </Button>
+                      </div>
+                      {touched.cidadeId && errors.cidadeId && <FormFeedback style={{ display: 'block' }}>{errors.cidadeId}</FormFeedback>}
+                    </FormGroup>
+                  </Col>
+                </Row>
+
+                <Row className="mt-3">
+                  <Col md={12}>
+                    <FormGroup>
+                      <Label for="observacoes">Observações</Label>
+                      <Input
+                        type="textarea"
+                        name="observacoes"
+                        id="observacoes"
+                        value={values.observacoes}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        rows={3}
+                      />
+                    </FormGroup>
+                  </Col>
+                </Row>
+
+                <Row className="mt-3">
+                  <Col md={12}>
+                    <FormGroup check>
+                      <Input
+                        type="checkbox"
+                        name="ativo"
+                        id="ativo"
+                        checked={values.ativo}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                      />
+                      <Label for="ativo" check>Funcionário ativo</Label>
+                    </FormGroup>
+                  </Col>
+                </Row>
+                
+                <div className="d-flex justify-content-end">
+                  <Button 
+                    type="submit" 
+                    color="primary"
+                    className="me-2"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Spinner size="sm" className="me-2" />
+                        Salvando...
+                      </>
+                    ) : (
+                      <>
+                        <FontAwesomeIcon icon={faSave} className="me-2" />
+                        Salvar
+                      </>
+                    )}
+                  </Button>
+                  <Button 
+                    type="button" 
+                    color="secondary" 
+                    onClick={() => navigate('/funcionarios')}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </Form>
+            )}
+          </Formik>
+        </CardBody>
+      </Card>
+
+      {/* Modal de seleção de cidade */}
+      <CidadeSearchModal
+        isOpen={cidadeModalOpen}
+        toggle={() => setCidadeModalOpen(!cidadeModalOpen)}
+        onSelect={async (cidade) => {
+          try {
+            // Buscar a cidade completa com informações detalhadas
+            if (cidade && cidade.id) {              // Importar e usar o serviço CidadeService
+              const cidadeResponse = await axios.get(`/api/Cidade/${cidade.id}`);
+              const cidadeCompleta = cidadeResponse.data;
+              console.log("Cidade completa recebida:", cidadeCompleta);
+              setCidadeSelecionada(cidadeCompleta);
+            } else {
+              setCidadeSelecionada(cidade);
+            }
+            setCidadeModalOpen(false);
+            // O useEffect cuidará de atualizar o formik
+          } catch (error) {
+            console.error("Erro ao buscar detalhes da cidade:", error);
+            setCidadeSelecionada(cidade);
+            setCidadeModalOpen(false);
+          }
+        }}
+        renderButton={false} /* Desabilitar botão flutuante */
+      />
+
+      {/* Modal de seleção de estado */}
+      <EstadoSearchModal
+        isOpen={estadoModalOpen}
+        toggle={() => setEstadoModalOpen(!estadoModalOpen)}
+        onSelect={(estado) => {
+          setEstadoSelecionado(estado);
+          setEstadoModalOpen(false);
+        }}
+        renderButton={false}
+      />
+
+      {/* Modal de seleção de país */}
+      <PaisSearchModal
+        isOpen={paisModalOpen}
+        toggle={() => setPaisModalOpen(!paisModalOpen)}
+        onSelect={(pais) => {
+          setPaisSelecionado(pais);
+          setPaisModalOpen(false);
+        }}
+        renderButton={false}
+      />
+
+      {/* Modal de seleção de função de funcionário */}
+      <FuncaoFuncionarioSearchModal
+        isOpen={funcaoModalOpen}
+        toggle={() => setFuncaoModalOpen(!funcaoModalOpen)}
+        onSelect={(funcao) => {
+          if (formikRef.current) {
+            formikRef.current.setFieldValue('funcaoFuncionarioId', funcao.id);
+            formikRef.current.setFieldValue('funcaoFuncionarioNome', funcao.funcaoFuncionarioNome);
+          }
+          setFuncaoModalOpen(false);
+        }}
+      />
+    </Container>
+  );
+};
+
+export default FuncionarioForm;

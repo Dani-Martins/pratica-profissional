@@ -1,0 +1,73 @@
+/* Estilos para a página de transportadoras */
+
+/* Garantir que os botões de ação sejam visíveis (horizontalmente) */
+.actions-column {
+  width: auto;
+  min-width: 250px;
+  white-space: nowrap;
+  vertical-align: middle !important;
+}
+
+/* Estilo para os botões na coluna de ações, semelhante ao padrão de outras páginas */
+.btn-action {
+  margin-right: 0.5rem !important;
+  font-size: 0.875rem !important;
+  height: auto !important;
+  padding: 0.25rem 0.5rem !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.25rem;
+  transition: all 0.2s ease;
+  border: none !important;
+}
+
+.btn-action:last-child {
+  margin-right: 0 !important;
+}
+
+/* Cores específicas para os botões de ação */
+.btn-info {
+  background-color: #20c997 !important;
+  border-color: transparent !important;
+  color: white !important;
+}
+
+.btn-primary {
+  background-color: #0d6efd !important;
+  border-color: transparent !important;
+  color: white !important;
+}
+
+.btn-danger {
+  background-color: #dc3545 !important;
+  border-color: transparent !important;
+  color: white !important;
+}
+
+/* Estilo para a tabela responsiva */
+.transportadora-table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+/* Melhorar o espaçamento das células da tabela para acomodar os botões lado a lado */
+.transportadora-table tr {
+  height: auto;
+}
+
+/* Certificando que as células têm padding adequado */
+.transportadora-table td,
+.transportadora-table th {
+  padding: 0.75rem !important;
+  vertical-align: middle !important;
+}
+
+/* Garantir que os ícones sejam visíveis */
+.transportadora-table .fa-eye,
+.transportadora-table .fa-edit,
+.transportadora-table .fa-trash {
+  font-size: 14px;
+  color: white;
+  margin-right: 4px;
+}

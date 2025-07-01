@@ -1,0 +1,197 @@
+.sidebar {
+  width: 250px;
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+.content-wrapper {
+  margin-left: 250px;
+  min-height: 100vh;
+}
+
+.sidebar-nav .nav-link {
+  color: rgba(255, 255, 255, 0.75);
+  transition: all 0.3s;
+}
+
+.sidebar-nav .nav-link:hover,
+.sidebar-nav .nav-link.active {
+  color: white;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-item {
+  cursor: pointer;
+}
+
+.sidebar-item > div:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Padronização dos submenus do Sidebar moderno */
+.submenu {
+  padding-left: 1.5rem;
+  background-color: rgba(0,0,0,0.15);
+}
+.submenu .nav-link {
+  color: #bfc8d4;
+  font-size: 0.97em;
+  padding: 0.5rem 1rem 0.5rem 2.2rem;
+  border-radius: 0 20px 20px 0;
+  margin-bottom: 2px;
+  transition: background 0.2s, color 0.2s;
+}
+.submenu .nav-link.active,
+.submenu .nav-link:hover {
+  color: #fff;
+  background: #007bff;
+}
+
+/* Estilos para responsividade */
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+  
+  .sidebar.show {
+    transform: translateX(0);
+  }
+  
+  .content-wrapper {
+    margin-left: 0;
+  }
+}
+
+/* Estilos para o Layout com Sidebar */
+
+.wrapper {
+  display: flex;
+  width: 100%;
+  align-items: stretch;
+}
+
+#sidebar {
+  min-width: 250px;
+  max-width: 250px;
+  background: #343a40;
+  color: #fff;
+  transition: all 0.3s;
+  height: 100vh;
+  position: fixed;
+  z-index: 999;
+}
+
+#sidebar.active {
+  margin-left: -250px;
+}
+
+#sidebar .sidebar-header {
+  padding: 20px;
+  background: #212529;
+}
+
+#sidebar ul.components {
+  padding: 20px 0;
+  border-bottom: 1px solid #47748b;
+}
+
+#sidebar ul p {
+  color: #fff;
+  padding: 10px;
+}
+
+#sidebar ul li a {
+  padding: 10px 20px;
+  font-size: 1.1em;
+  display: block;
+  color: rgba(255, 255, 255, 0.75);
+  text-decoration: none;
+}
+
+#sidebar ul li a:hover {
+  color: #fff;
+  background: #495057;
+}
+
+#sidebar ul li.active > a, 
+#sidebar a.active {
+  color: #fff;
+  background: #007bff;
+}
+
+#sidebar ul li ul li a {
+  padding-left: 40px;
+  background: #454d55;
+}
+
+#content {
+  width: 100%;
+  padding: 0;
+  min-height: 100vh;
+  transition: all 0.3s;
+  margin-left: 250px;
+}
+
+.wrapper.sidebar-closed #content {
+  margin-left: 0;
+}
+
+.wrapper.sidebar-open #content {
+  margin-left: 250px;
+}
+
+@media (max-width: 991.98px) {
+  #sidebar {
+    margin-left: -250px;
+  }
+  #sidebar.active {
+    margin-left: 0;
+  }
+  #content {
+    margin-left: 0;
+  }
+  .wrapper.sidebar-open #content {
+    margin-left: 0;
+  }
+}
+
+/* Estilo para ícones de notificação */
+.icon-bell, .icon-envelope {
+  font-size: 1.2rem;
+  position: relative;
+}
+
+/* Badge de notificação */
+.badge {
+  position: absolute;
+  top: 0px;
+  right: -8px;
+  font-size: 0.6rem;
+}
+
+/* Estilos para os dropdowns */
+.dropdown-menu {
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.175);
+}
+
+/* Estilos para os itens do submenu */
+#sidebar ul ul {
+  background: #454d55;
+}
+
+#sidebar ul ul li a {
+  padding-left: 40px;
+}
+
+/* Botão toggle da sidebar */
+.sidebar-toggle-btn {
+  padding: 0.25rem 0.75rem;
+  font-size: 1.25rem;
+  color: #343a40;
+  border: none;
+}

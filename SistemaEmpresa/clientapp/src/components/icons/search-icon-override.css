@@ -1,0 +1,22 @@
+/* Override para garantir que ícones de lupa apareçam corretamente */
+.btn svg,
+.btn-info svg,
+button svg,
+.fa-search,
+svg.bi-search,
+[class*="FaSearch"] {
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Específico para os botões de pesquisa em dropdowns e modais */
+.d-flex .btn svg,
+.modal svg,
+.modal .fa-search,
+.modal-body svg,
+.d-flex .ms-2 svg {
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}

@@ -1,0 +1,262 @@
+import apiClient from '../client';
+
+// Função para normalizar dados recebidos da API (PascalCase → camelCase)
+const normalizarDados = (data) => {
+  // Se for um array, normalizar cada item
+  if (Array.isArray(data)) {
+    return data.map(item => normalizarDados(item));
+  }
+  
+  // Se não for um objeto ou for nulo, retornar como está
+  if (!data || typeof data !== 'object') {
+    return data;
+  }
+  
+  const resultado = {};
+  
+  // Para cada propriedade no objeto...
+  Object.keys(data).forEach(key => {
+    // Converter primeira letra para minúscula (PascalCase → camelCase)
+    const newKey = key.charAt(0).toLowerCase() + key.slice(1);
+    
+    // Mapear campos específicos se necessário
+    if (key === 'Codigo') {
+      resultado.codigo = data[key]; // Mantemos como código para simplicidade
+      resultado.codigoTelefonico = data[key]; // Redundância para compatibilidade    
+    } else if (key === 'Situacao') {
+      // Garantir que situacao seja tratado como número
+      if (data[key] !== null && data[key] !== undefined) {
+        resultado.situacao = parseInt(data[key], 10);
+      } else {
+        // Valor padrão se for nulo
+        resultado.situacao = 1; // Ativo por padrão
+      }
+    } else if (key === 'DataCriacao') {
+      // Preservar a data de criação original exatamente como veio da API
+      resultado.dataCriacao = data[key];
+    } else if (key === 'UserCriacao') {
+      // Garantir que UserCriacao sempre tenha um valor, mesmo que seja 'SISTEMA'
+      resultado.userCriacao = data[key] || 'SISTEMA';
+    } else {
+      resultado[newKey] = data[key];
+    }
+  });
+  
+  return resultado;
+};
+
+// Inicializar lista de países inativos ao carregar
+if (typeof window !== 'undefined') {
+  try {
+    const storedPaises = localStorage.getItem('paisesInativos');
+    window.paisesInativos = storedPaises ? JSON.parse(storedPaises) : [];
+    console.log('Lista de países inativos carregada do localStorage:', window.paisesInativos);
+  } catch (error) {
+    console.error('Erro ao carregar lista de países inativos:', error);
+    window.paisesInativos = [];
+  }
+}
+
+// Função para verificar se um país está na lista de inativos
+const isPaisInativo = (id) => {
+  if (!window.paisesInativos) return false;
+  return window.paisesInativos.includes(parseInt(id, 10));
+};
+
+// Função para aplicar situação forçada a países que sabemos que estão inativos
+const aplicarSituacaoForcada = (paises) => {
+  if (!Array.isArray(paises)) return paises;
+  
+  return paises.map(pais => {
+    // Se o país está na lista de inativos forçados, alterar sua situação para 0
+    if (isPaisInativo(pais.id)) {
+      console.log(`Forçando país ${pais.id} - ${pais.nome} para inativo (situação atual: ${pais.situacao})`);
+      return { ...pais, situacao: 0 };
+    }
+    return pais;
+  });
+};
+
+// Função para remover um país da lista de inativos
+const removerPaisInativo = (id) => {
+  const idNumerico = Number(id);
+  
+  // Garantir que a lista existe
+  if (!window.paisesInativos) {
+    window.paisesInativos = [];
+    return;
+  }
+  
+  // Verificar se o país está na lista
+  if (window.paisesInativos.includes(idNumerico)) {
+    console.log(`Removendo país ${id} da lista de inativos`);
+    window.paisesInativos = window.paisesInativos.filter(paisId => paisId !== idNumerico);
+    
+    // Atualizar o localStorage
+    try {
+      localStorage.setItem('paisesInativos', JSON.stringify(window.paisesInativos));
+      console.log(`Lista atualizada de países inativos salva:`, window.paisesInativos);
+    } catch (error) {
+      console.error("Erro ao salvar lista atualizada de países inativos:", error);
+    }
+  }
+};
+
+const PaisService = {
+  getAll: async (forceReload = false) => {
+    try {
+      // Criar timestamp para evitar cache
+      const timestamp = `?_t=${new Date().getTime()}`;
+      
+      // Configurar cabeçalhos para evitar cache
+      const config = {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      };
+      
+      const response = await apiClient.get(`/api/Pais${timestamp}`, config);
+      
+      // Normalizar e processar os dados
+      const dadosNormalizados = normalizarDados(response.data);
+      
+      // Aplicar situações forçadas (para países que sabemos que estão inativos)
+      const dadosCorrigidos = aplicarSituacaoForcada(dadosNormalizados);
+      
+      return dadosCorrigidos;
+    } catch (error) {
+      console.error('Erro ao buscar países:', error);
+      throw error;
+    }
+  },
+  
+  getById: async (id) => {
+    try {
+      const response = await apiClient.get(`/api/Pais/${id}`);
+      
+      // Normalizar os dados
+      let dadosNormalizados = normalizarDados(response.data);
+      
+      // Se o país está na lista de inativos forçados, alterar sua situação para 0
+      if (isPaisInativo(id)) {
+        console.log(`País ${id} está na lista de inativos forçados - Ajustando situação para 0`);
+        dadosNormalizados.situacao = 0;
+      }
+      
+      return dadosNormalizados;
+    } catch (error) {
+      console.error(`Erro ao buscar país ${id}:`, error);
+      throw error;
+    }
+  },
+  
+  create: async (paisData) => {
+    try {
+      // Garantir que estamos enviando os dados no formato esperado pelo controller
+      const dadosParaAPI = {
+        Nome: paisData.nome,
+        Sigla: paisData.sigla || '',
+        Codigo: paisData.codigo || '',
+        Situacao: Number(paisData.situacao), // Garantir que seja um número
+        UserCriacao: paisData.userCriacao || 'SISTEMA'
+      };
+      
+      const response = await apiClient.post('/api/Pais', dadosParaAPI);
+      return normalizarDados(response.data);
+    } catch (error) {
+      console.error('Erro ao criar país:', error);
+      throw error;
+    }
+  },
+  
+  update: async (id, paisData) => {
+    try {
+      // Obter dados atuais
+      const paisAtual = await PaisService.getById(id);
+      
+      // Verificar se estamos reativando um país inativo
+      if (Number(paisAtual.situacao) === 0 && Number(paisData.situacao) === 1) {
+        console.log(`Reativando país inativo ID ${id}`);
+        
+        try {
+          // Usar o endpoint específico para reativação
+          const response = await apiClient.post(`/api/Pais/${id}/reativar`);
+          const paisAtualizado = normalizarDados(response.data);
+          
+          // Remover da lista de inativos local
+          removerPaisInativo(id);
+          
+          // Disparar evento de atualização
+          window.dispatchEvent(new CustomEvent('dataChange'));
+          
+          return paisAtualizado;
+        } catch (error) {
+          console.error(`Erro ao reativar país ${id}:`, error);
+          throw error;
+        }
+      }
+        
+      // Para atualizações normais, usar o endpoint PUT padrão
+      const dadosParaAPI = {
+        Nome: paisData.nome,
+        Sigla: paisData.sigla || '',
+        Codigo: paisData.codigo || '',
+        Situacao: Number(paisData.situacao), // Garantir que seja um número
+        UserAlteracao: paisData.userAlteracao || 'SISTEMA'
+      };
+      
+      const response = await apiClient.put(`/api/Pais/${id}`, dadosParaAPI);
+      const paisAtualizado = normalizarDados(response.data);
+      
+      // Disparar evento de atualização
+      if (window.dispatchEvent) {
+        window.dispatchEvent(new CustomEvent('dataChange', { detail: { type: 'pais' }}));
+      }
+      
+      return paisAtualizado;
+    } catch (error) {
+      console.error(`Erro ao atualizar país ${id}:`, error);
+      throw error;
+    }
+  },
+  
+  delete: async (id) => {
+    try {
+      // Verificar se o endpoint de inativação existe
+      const response = await apiClient.delete(`/api/Pais/${id}`);
+      
+      // Após excluir, adicionar o ID à lista de países inativos
+      if (!window.paisesInativos) {
+        window.paisesInativos = [];
+      }
+      
+      // Adicionar apenas se ainda não estiver na lista
+      const idNumerico = Number(id);
+      if (!window.paisesInativos.includes(idNumerico)) {
+        window.paisesInativos.push(idNumerico);
+        
+        // Salvar a lista atualizada no localStorage
+        try {
+          localStorage.setItem('paisesInativos', JSON.stringify(window.paisesInativos));
+          console.log(`Lista de países inativos salva no localStorage:`, window.paisesInativos);
+        } catch (error) {
+          console.error("Erro ao salvar lista de países inativos:", error);
+        }
+      }
+      
+      // Notificar componentes sobre a mudança
+      window.dispatchEvent(new CustomEvent('dataChange'));
+      
+      return normalizarDados(response.data);
+    } catch (error) {
+      console.error(`Erro ao excluir país ${id}:`, error);
+      throw error;
+    }
+  },
+  
+  removerPaisInativo: removerPaisInativo
+};
+
+export default PaisService;

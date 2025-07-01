@@ -1,0 +1,328 @@
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { 
+  Card, CardBody, Form, FormGroup, Label, Input, 
+  Button, Alert, Spinner, Row, Col
+} from 'reactstrap';
+import { Formik } from 'formik';
+import * as Yup from 'yup';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { 
+  faSave, faArrowLeft, faTimes, faTruck
+} from '@fortawesome/free-solid-svg-icons';
+
+// Schema de validação
+const TransportadoraSchema = Yup.object().shape({
+  nome: Yup.string()
+    .required('Nome é obrigatório')
+    .min(3, 'Nome deve ter pelo menos 3 caracteres')
+    .max(100, 'Nome deve ter no máximo 100 caracteres'),
+  cnpj: Yup.string()
+    .required('CNPJ é obrigatório')
+    .matches(/^\d{2}\.\d{3}\.\d{3}\/\d{4}\-\d{2}$/, 'CNPJ inválido'),
+  email: Yup.string()
+    .email('Email inválido')
+    .required('Email é obrigatório'),
+  telefone: Yup.string()
+    .required('Telefone é obrigatório'),
+  endereco: Yup.object().shape({
+    logradouro: Yup.string().required('Logradouro é obrigatório'),
+    cidade: Yup.string().required('Cidade é obrigatória')
+  })
+});
+
+const TransportadoraForm = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [initialValues, setInitialValues] = useState({
+    nome: '',
+    cnpj: '',
+    email: '',
+    telefone: '',
+    observacoes: '',
+    endereco: {
+      logradouro: '',
+      cidade: ''
+    },
+    ativo: true
+  });
+  const [error, setError] = useState(null);
+  
+  useEffect(() => {
+    // Carregar dados da transportadora para edição
+    const fetchTransportadora = async () => {
+      if (id) {
+        try {
+          setLoading(true);
+          
+          // Simular transportadora para desenvolvimento
+          setTimeout(() => {
+            setInitialValues({
+              nome: 'Transportadora Veloz',
+              cnpj: '12.345.678/0001-90',
+              email: 'contato@veloz.com.br',
+              telefone: '(11) 3456-7890',
+              observacoes: 'Transportadora para entregas rápidas.',
+              endereco: {
+                logradouro: 'Av. Paulista',
+                cidade: 'São Paulo',
+              },
+              ativo: true
+            });
+            setLoading(false);
+          }, 1000);
+        } catch (err) {
+          setError('Erro ao carregar transportadora: ' + err.message);
+          setLoading(false);
+        }
+      }
+    };
+    
+    fetchTransportadora();
+  }, [id]);
+  
+  const handleSubmit = async (values, { setSubmitting }) => {
+    try {
+      setError(null);
+      
+      if (id) {
+        // await TransportadoraService.update(id, values);
+        console.log('Atualizando transportadora:', values);
+      } else {
+        // await TransportadoraService.create(values);
+        console.log('Criando transportadora:', values);
+      }
+      
+      navigate('/transportadoras');
+    } catch (err) {
+      setError('Erro ao salvar transportadora: ' + err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+  
+  if (loading) {
+    return (
+      <div className="text-center p-5">
+        <Spinner color="primary" />
+        <p className="mt-3">Carregando dados da transportadora...</p>
+      </div>
+    );
+  }
+  
+  return (
+    <div>
+      <div className="page-header">
+        <h2>{id ? 'Editar Transportadora' : 'Nova Transportadora'}</h2>
+        <Button 
+          color="secondary" 
+          onClick={() => navigate('/transportadoras')}
+        >
+          <FontAwesomeIcon icon={faArrowLeft} className="me-2" />
+          Voltar
+        </Button>
+      </div>
+      
+      {error && <Alert color="danger">{error}</Alert>}
+      
+      <Card>
+        <CardBody>
+          <Formik
+            initialValues={initialValues}
+            validationSchema={TransportadoraSchema}
+            onSubmit={handleSubmit}
+            enableReinitialize
+          >
+            {({ values, errors, touched, handleChange, handleBlur, handleSubmit, isSubmitting }) => (
+              <Form onSubmit={handleSubmit}>
+                <h5 className="mb-4">
+                  <FontAwesomeIcon icon={faTruck} className="me-2" />
+                  Informações da Transportadora
+                </h5>
+
+                <Row>
+                  <Col md={8}>
+                    <FormGroup>
+                      <Label for="nome">Nome/Razão Social*</Label>
+                      <Input
+                        type="text"
+                        name="nome"
+                        id="nome"
+                        maxLength={100}
+                        value={values.nome}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        invalid={touched.nome && !!errors.nome}
+                      />
+                      {touched.nome && errors.nome && (
+                        <div className="text-danger">{errors.nome}</div>
+                      )}
+                    </FormGroup>
+                  </Col>
+                  
+                  <Col md={4}>
+                    <FormGroup>
+                      <Label for="cnpj">CNPJ*</Label>
+                      <Input
+                        type="text"
+                        name="cnpj"
+                        id="cnpj"
+                        maxLength={18}
+                        value={values.cnpj}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        invalid={touched.cnpj && !!errors.cnpj}
+                      />
+                      {touched.cnpj && errors.cnpj && (
+                        <div className="text-danger">{errors.cnpj}</div>
+                      )}
+                    </FormGroup>
+                  </Col>
+                </Row>
+
+                <Row>
+                  <Col md={6}>
+                    <FormGroup>
+                      <Label for="telefone">Telefone*</Label>
+                      <Input
+                        type="text"
+                        name="telefone"
+                        id="telefone"
+                        value={values.telefone}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        invalid={touched.telefone && !!errors.telefone}
+                      />
+                      {touched.telefone && errors.telefone && (
+                        <div className="text-danger">{errors.telefone}</div>
+                      )}
+                    </FormGroup>
+                  </Col>
+                  
+                  <Col md={6}>
+                    <FormGroup>
+                      <Label for="email">Email*</Label>
+                      <Input
+                        type="email"
+                        name="email"
+                        id="email"
+                        value={values.email}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        invalid={touched.email && !!errors.email}
+                      />
+                      {touched.email && errors.email && (
+                        <div className="text-danger">{errors.email}</div>
+                      )}
+                    </FormGroup>
+                  </Col>
+                </Row>
+
+                <hr className="my-4" />
+                <h5 className="mb-3">Endereço</h5>
+
+                <Row>
+                  <Col md={6}>
+                    <FormGroup>
+                      <Label for="endereco.logradouro">Logradouro*</Label>
+                      <Input
+                        type="text"
+                        name="endereco.logradouro"
+                        id="endereco.logradouro"
+                        value={values.endereco.logradouro}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        invalid={touched.endereco?.logradouro && !!errors.endereco?.logradouro}
+                      />
+                      {touched.endereco?.logradouro && errors.endereco?.logradouro && (
+                        <div className="text-danger">{errors.endereco.logradouro}</div>
+                      )}
+                    </FormGroup>
+                  </Col>
+                  
+                  <Col md={6}>
+                    <FormGroup>
+                      <Label for="endereco.cidade">Cidade*</Label>
+                      <Input
+                        type="text"
+                        name="endereco.cidade"
+                        id="endereco.cidade"
+                        value={values.endereco.cidade}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        invalid={touched.endereco?.cidade && !!errors.endereco?.cidade}
+                      />
+                      {touched.endereco?.cidade && errors.endereco?.cidade && (
+                        <div className="text-danger">{errors.endereco.cidade}</div>
+                      )}
+                    </FormGroup>
+                  </Col>
+                </Row>
+
+                <hr className="my-4" />
+
+                <FormGroup>
+                  <Label for="observacoes">Observações</Label>
+                  <Input
+                    type="textarea"
+                    name="observacoes"
+                    id="observacoes"
+                    rows={3}
+                    value={values.observacoes}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                  />
+                </FormGroup>
+                
+                {id && (
+                  <FormGroup check className="mb-4">
+                    <Label check>
+                      <Input
+                        type="checkbox"
+                        name="ativo"
+                        checked={values.ativo}
+                        onChange={handleChange}
+                      />{' '}
+                      Transportadora ativa
+                    </Label>
+                  </FormGroup>
+                )}
+
+                <div className="d-flex justify-content-end gap-2 mt-4">
+                  <Button 
+                    type="submit" 
+                    color="primary" 
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Spinner size="sm" className="me-2" />
+                        Salvando...
+                      </>
+                    ) : (
+                      <>
+                        <FontAwesomeIcon icon={faSave} className="me-2" />
+                        Salvar
+                      </>
+                    )}
+                  </Button>
+                  <Button 
+                    type="button" 
+                    color="secondary" 
+                    onClick={() => navigate('/transportadoras')}
+                  >
+                    <FontAwesomeIcon icon={faTimes} className="me-2" />
+                    Cancelar
+                  </Button>
+                </div>
+              </Form>
+            )}
+          </Formik>
+        </CardBody>
+      </Card>
+    </div>
+  );
+};
+
+export default TransportadoraForm;

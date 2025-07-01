@@ -1,0 +1,263 @@
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { Card, CardBody, Button, Table, Alert, Input, Label } from 'reactstrap';
+import PaisService from '../../../api/services/paisService';
+import DeleteConfirmationModal from '../../../components/DeleteConfirmationModal';
+import moment from 'moment';
+import 'moment/locale/pt-br';
+
+// Configurar o momento para português brasileiro
+moment.locale('pt-br');
+
+const PaisList = () => {
+  const [paises, setPaises] = useState([]);
+  const [paisesFiltrados, setPaisesFiltrados] = useState([]);
+  const [filtroSituacao, setFiltroSituacao] = useState('ativos'); // Default: mostrar apenas ativos
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [paisParaExcluir, setPaisParaExcluir] = useState(null);
+
+  // Função para buscar todos os países
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      // Buscar dados atualizados
+      const data = await PaisService.getAll();
+      
+      // Atualizar o estado com os novos dados
+      setPaises(data || []);
+      aplicarFiltro(data || [], filtroSituacao);
+      setError(null);
+    } catch (error) {
+      console.error('Erro ao buscar países:', error);
+      setError('Falha ao carregar os países. Por favor, tente novamente mais tarde.');
+      setPaises([]);
+      setPaisesFiltrados([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Função para aplicar filtros na lista de países
+  const aplicarFiltro = (data, filtro) => {
+    if (!data || !Array.isArray(data)) {
+      setPaisesFiltrados([]);
+      return;
+    }
+    
+    let resultado;
+    
+    switch(filtro) {
+      case 'ativos':
+        resultado = data.filter(pais => {
+          // Converter para número e garantir que seja 1
+          const situacao = Number(pais.situacao);
+          return situacao === 1;
+        });
+        break;
+        
+      case 'inativos':
+        resultado = data.filter(pais => {
+          // Converter para número e verificar se é 0
+          const situacao = Number(pais.situacao);
+          return situacao === 0;
+        });
+        break;
+        
+      case 'todos':
+      default:
+        resultado = data;
+        break;
+    }
+    
+    // Ordenar por nome para melhor apresentação
+    resultado = resultado.sort((a, b) => a.nome.localeCompare(b.nome));
+    setPaisesFiltrados(resultado);
+  };
+
+  // Carregar dados na montagem do componente
+  useEffect(() => {
+    fetchData();
+    
+    // Adicionar um listener para atualizações de dados
+    const handleDataChange = () => {
+      fetchData();
+    };
+    
+    // Registrar o ouvinte para o evento dataChange
+    window.addEventListener('dataChange', handleDataChange);
+    
+    // Cleanup: remover o ouvinte quando o componente for desmontado
+    return () => {
+      window.removeEventListener('dataChange', handleDataChange);
+    };
+  }, []);
+  
+  // Aplicar filtros quando o filtro ou os dados mudarem
+  useEffect(() => {
+    aplicarFiltro(paises, filtroSituacao);
+  }, [filtroSituacao, paises]);
+  
+  // Manipulador para mudança de filtro
+  const handleFiltroChange = (e) => {
+    setFiltroSituacao(e.target.value);
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      // Usa o país armazenado na variável de estado para mostrar o nome em caso de erro
+      const paisNome = paisParaExcluir?.nome;
+      
+      // Chamar o método delete do serviço que inativa o país
+      await PaisService.delete(id);
+      
+      // Fechar o modal e limpar o estado
+      setModalOpen(false);
+      setPaisParaExcluir(null);
+      
+      // Mostrar mensagem de sucesso
+      setError({ type: 'success', message: `País "${paisNome}" excluído com sucesso!` });
+      
+      // Limpar a mensagem após alguns segundos
+      setTimeout(() => setError(null), 3000);
+      
+      // Recarregar dados
+      fetchData();
+    } catch (error) {
+      console.error('Erro ao excluir país:', error);
+      
+      let mensagemErro = "Não foi possível excluir o país.";
+      
+      // Verificar se é erro de restrição de chave estrangeira
+      if (error.response && error.response.data && 
+          typeof error.response.data === 'string' &&
+          error.response.data.includes('foreign key constraint fails')) {
+        mensagemErro = `Não é possível excluir o país "${paisParaExcluir.nome}" porque existem estados associados a ele.`;
+      }
+      
+      setModalOpen(false);
+      setPaisParaExcluir(null);
+      setError({ type: 'danger', message: mensagemErro });
+    }
+  };
+
+  const openDeleteModal = (pais) => {
+    setPaisParaExcluir(pais);
+    setModalOpen(true);
+  };
+
+  if (loading) {
+    return <div className="text-center my-5">Carregando...</div>;
+  }
+
+  return (
+    <Card>
+      <CardBody>
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <h3>Países</h3>
+          <Link to="/localizacao/paises/novo">
+            <Button color="primary">
+              + Novo País
+            </Button>
+          </Link>
+        </div>
+        
+        {error && (
+          <Alert color={error.type === 'success' ? 'success' : 'danger'}>
+            {error.message || error}
+          </Alert>
+        )}
+          
+        <div className="mb-3">
+          <div style={{ maxWidth: '350px' }}>
+            <Label for="filtroSituacao">Filtrar por situação:</Label>
+            <Input 
+              type="select" 
+              id="filtroSituacao" 
+              value={filtroSituacao}
+              onChange={handleFiltroChange}
+              className="form-select mb-2"
+            >
+              <option value="ativos">Somente Ativos</option>
+              <option value="inativos">Somente Inativos</option>
+              <option value="todos">Todos</option>
+            </Input>
+            
+            <div className="text-muted mt-1">
+              Exibindo {paisesFiltrados.length} {paisesFiltrados.length === 1 ? 'país' : 'países'}
+              {filtroSituacao !== 'todos' ? ` (${filtroSituacao === 'ativos' ? 'somente ativos' : 'somente inativos'})` : ''}
+            </div>
+          </div>
+        </div>
+
+        <Table responsive striped>
+          <thead>
+            <tr>              <th>País</th>
+              <th>Sigla</th>
+              <th>Código</th>
+              <th>Situação</th>
+              <th>Data Criação</th>
+              <th>Última Atualização</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {paisesFiltrados.length > 0 ? (
+              paisesFiltrados.map(pais => (
+                <tr key={pais.id}>
+                  <td>{pais.nome}</td>
+                  <td>{pais.sigla}</td>
+                  <td>{pais.codigo ? `+${pais.codigo}` : ''}</td>
+                  <td>
+                    {Number(pais.situacao) === 1 ? (
+                      <span className="badge rounded-pill px-3 py-2 bg-success">Ativo</span>
+                    ) : (
+                      <span className="badge rounded-pill px-3 py-2 bg-danger">Inativo</span>
+                    )}
+                  </td>                  <td>
+                    {pais.dataCriacao ? moment(pais.dataCriacao).format('DD/MM/YYYY HH:mm') : 'N/A'}
+                    <small className="d-block text-muted">{pais.userCriacao || 'Sistema'}</small>
+                  </td>
+                  <td>
+                    {pais.dataAlteracao ? moment(pais.dataAlteracao).format('DD/MM/YYYY HH:mm') : 'N/A'}
+                    {pais.dataAlteracao && <small className="d-block text-muted">{pais.userAtualizacao || 'Sistema'}</small>}
+                  </td>
+                  <td>
+                    <Link to={`/localizacao/paises/detalhes/${pais.id}`} className="btn btn-sm btn-primary me-2">
+                      Detalhes
+                    </Link>
+                    <Link to={`/localizacao/paises/editar/${pais.id}`} className="btn btn-sm btn-info me-2">
+                      Editar
+                    </Link>
+                    {Number(pais.situacao) === 1 && (
+                      <Button color="danger" size="sm" onClick={() => openDeleteModal(pais)}>
+                        Excluir
+                      </Button>
+                    )}
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="7" className="text-center">
+                  {paises.length === 0 ? 
+                    "Nenhum país cadastrado." : 
+                    `Nenhum país ${filtroSituacao === 'ativos' ? 'ativo' : filtroSituacao === 'inativos' ? 'inativo' : ''} encontrado.`}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </Table>
+      </CardBody>        <DeleteConfirmationModal
+        isOpen={modalOpen}
+        toggle={() => setModalOpen(!modalOpen)}
+        onDelete={() => handleDelete(paisParaExcluir?.id)}
+        itemName={paisParaExcluir?.nome}
+        itemType="país"
+      />
+    </Card>
+  );
+};
+
+export default PaisList;

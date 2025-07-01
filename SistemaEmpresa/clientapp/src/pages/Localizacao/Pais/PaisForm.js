@@ -4,6 +4,7 @@ import { Card, CardBody, Form, FormGroup, Label, Input, Button, Alert, InputGrou
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft, faSave, faTimes } from '@fortawesome/free-solid-svg-icons';
 import PaisService from '../../../api/services/paisService';
+import { handleUpperCaseChange } from '../../../utils/uppercaseTransformer';
 
 const PaisForm = () => {
   const { id } = useParams();
@@ -90,10 +91,13 @@ const PaisForm = () => {
   const handleChange = async (e) => {
     const { name, value } = e.target;
     
+    // Aplicar transformação para maiúsculo em campos de texto
+    const transformedValue = handleUpperCaseChange(name, value);
+    
     // Se o campo for a sigla, vamos validar
     if (name === 'sigla') {
       // Converter para maiúsculo e limitar a 2 caracteres
-      const siglaFormatada = value.toUpperCase().slice(0, 2);
+      const siglaFormatada = transformedValue.slice(0, 2);
       
       setFormData(prevData => ({
         ...prevData,
@@ -109,10 +113,10 @@ const PaisForm = () => {
         setSiglaErro('');
       }
     } else {
-      // Para outros campos, apenas atualizar o valor
+      // Para outros campos, usar o valor transformado
       setFormData(prevData => ({
         ...prevData,
-        [name]: value
+        [name]: transformedValue
       }));
     }
   };  const handleSubmit = async (e) => {

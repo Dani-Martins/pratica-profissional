@@ -4,6 +4,7 @@ import axios from 'axios';
 import { Card, CardBody, Form, FormGroup, Label, Input, Button, Alert } from 'reactstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSave } from '@fortawesome/free-solid-svg-icons';
+import { handleUpperCaseChange } from '../../../utils/uppercaseTransformer';
 
 const MarcaForm = ({ onSaved, onCancel, isModal }) => {
   const navigate = useNavigate();
@@ -89,7 +90,7 @@ const MarcaForm = ({ onSaved, onCancel, isModal }) => {
               type="text"
               id="marca"
               value={nome || ''}
-              onChange={e => setNome(e.target.value)}
+              onChange={e => setNome(handleUpperCaseChange('nome', e.target.value))}
               maxLength={50}
               required
               autoFocus

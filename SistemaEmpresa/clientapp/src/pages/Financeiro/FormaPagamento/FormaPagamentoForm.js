@@ -7,6 +7,7 @@ import 'moment/locale/pt-br';
 import CustomAlert from '../../../components/CustomAlert';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFloppyDisk } from '@fortawesome/free-solid-svg-icons';
+import { handleUpperCaseChange } from '../../../utils/uppercaseTransformer';
 
 // Configurar o momento para português brasileiro
 moment.locale('pt-br');
@@ -66,9 +67,11 @@ const FormaPagamentoForm = () => {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+    const transformedValue = type === 'checkbox' ? checked : handleUpperCaseChange(name, value);
+    
     setFormaPagamento({
       ...formaPagamento,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: transformedValue
     });
 
     // Limpa erros de validação ao editar

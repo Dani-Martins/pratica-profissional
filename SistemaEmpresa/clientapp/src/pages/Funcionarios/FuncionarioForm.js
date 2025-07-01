@@ -12,6 +12,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faSave, faTimes, faArrowLeft, faSearch 
 } from '@fortawesome/free-solid-svg-icons';
+import { handleUpperCaseChange } from '../../utils/uppercaseTransformer';
 import { 
   formatarCPF, 
   formatarCEP, 

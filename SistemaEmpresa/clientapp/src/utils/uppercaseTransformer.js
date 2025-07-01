@@ -30,20 +30,54 @@ export const transformToUpperCase = (text) => {
   return text;
 };
 
-// Criamos um manipulador que pode ser usado em onChange dos inputs Formik
-export const handleUpperCaseChange = (e, setFieldValue) => {
-  const { name, value } = e.target;
+// Função versátil para transformar campos para maiúsculas
+export const handleUpperCaseChange = (fieldNameOrEvent, valueOrSetFieldValue, setFieldValue) => {
+  // Campos que devem permanecer com formatação original
+  const preserveCaseFields = [
+    'email', 'password', 'telefone', 'cpf', 'cnpj', 'cep', 
+    'limiteCredito', 'salario', 'valor', 'preco', 'quantidade',
+    'codigo', 'url', 'site'
+  ];
+
+  // Uso 1: handleUpperCaseChange(fieldName, value) - para formulários simples
+  if (typeof fieldNameOrEvent === 'string' && typeof valueOrSetFieldValue === 'string') {
+    const fieldName = fieldNameOrEvent;
+    const value = valueOrSetFieldValue;
+    
+    // Verificar se é um campo que deve preservar a formatação
+    const shouldPreserve = preserveCaseFields.some(field => 
+      fieldName.toLowerCase().includes(field)
+    );
+    
+    return shouldPreserve ? value : (value ? value.toUpperCase() : value);
+  }
   
-  // Ignorar emails
-  if (name.toLowerCase().includes('email') || 
-      e.target.type === 'email' || 
-      e.target.id.toLowerCase().includes('email')) {
-    setFieldValue(name, value);
+  // Uso 2: handleUpperCaseChange(event, setFieldValue) - para Formik
+  if (fieldNameOrEvent && fieldNameOrEvent.target && typeof valueOrSetFieldValue === 'function') {
+    const e = fieldNameOrEvent;
+    const setFieldValueFunc = valueOrSetFieldValue;
+    const { name, value, type } = e.target;
+    
+    // Verificar se é um campo que deve preservar a formatação
+    const shouldPreserve = preserveCaseFields.some(field => 
+      name.toLowerCase().includes(field) || 
+      type === 'email' || 
+      type === 'number' ||
+      e.target.id.toLowerCase().includes(field)
+    );
+    
+    if (shouldPreserve) {
+      setFieldValueFunc(name, value);
+      return;
+    }
+    
+    // Aplicar transformação para maiúsculas
+    setFieldValueFunc(name, value ? value.toUpperCase() : value);
     return;
   }
   
-  // Aplicar transformação para maiúsculas
-  setFieldValue(name, value.toUpperCase());
+  // Fallback: retornar o valor como está
+  return fieldNameOrEvent;
 };
 
 // Função para ser executada quando o DOM for carregado

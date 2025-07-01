@@ -6,6 +6,7 @@ import { useMessages } from '../../../contexts/MessageContext';
 import PaisSearchModal from '../Pais/PaisSearchModal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
+import { handleUpperCaseChange } from '../../../utils/uppercaseTransformer';
 
 const EstadoModalForm = ({ isOpen, toggle, onSuccess }) => {  const [formData, setFormData] = useState({
     nome: '',
@@ -27,7 +28,8 @@ const EstadoModalForm = ({ isOpen, toggle, onSuccess }) => {  const [formData, s
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const transformedValue = handleUpperCaseChange(name, value);
+    setFormData(prev => ({ ...prev, [name]: transformedValue }));
   };
 
   const handleSubmit = async (e) => {

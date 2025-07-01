@@ -7,6 +7,7 @@ import CidadeService from '../../../api/services/cidadeService';
 import { useMessages } from '../../../contexts/MessageContext';
 import EstadoSearchModal from '../Estado/EstadoSearchModal';
 import EstadoModalForm from '../Estado/EstadoModalForm';
+import { handleUpperCaseChange } from '../../../utils/uppercaseTransformer';
 
 const CidadeForm = () => {  const { id } = useParams();
   const navigate = useNavigate();
@@ -71,9 +72,10 @@ const CidadeForm = () => {  const { id } = useParams();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    const transformedValue = handleUpperCaseChange(name, value);
     setFormData(prevData => ({
       ...prevData,
-      [name]: value
+      [name]: transformedValue
     }));
   };
   const handleSubmit = async (e) => {
